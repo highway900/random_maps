@@ -8,7 +8,7 @@ NODE_STYLE = {
 }
 
 EDGE_STYLE = {
-    'stroke_width': 10.0,
+    'stroke_width': 5.0,
     'stroke': 'green',
 }
 
@@ -19,21 +19,26 @@ PATH_STYLE = {
 
 
 class Scaler(object):
-    def __init__(self, mx, my, gx, gy):
+    def __init__(self, resX, resY, gx, gy):
         """Scale point u by factor s
         """
-        self.sx = mx / gx
-        self.sy = my / gy
+        self.sx = resX / gx
+        self.sy = resY / gy
 
     def scale(self, u):
         x, y = u
         return (x * self.sx + self.sx / 2, y * self.sy + self.sy / 2)
 
 
-def _draw_edges(dwg, edges, _sp, style=EDGE_STYLE):
-    edges_layer = dwg.add(dwg.g(id="edges", **style))
+def _draw_edges(dwg, g, edges, _sp, style=EDGE_STYLE):
+    edges_layer = dwg.add(dwg.g(id="edges"))
     for u, v in edges:
-        edges_layer.add(dwg.line(start=_sp.scale(u), end=_sp.scale(v)))
+        # print u, v, g.edge[u][v]
+        edges_layer.add(
+            dwg.line(
+                start=_sp.scale(u),
+                end=_sp.scale(v),
+                **g.edge[u][v].style()))
 
 
 def _draw_nodes(dwg, g, _sp, style=NODE_STYLE):
@@ -48,7 +53,7 @@ def _draw_nodes(dwg, g, _sp, style=NODE_STYLE):
 
 def draw_graph(
         g,
-        mx, my,
+        resX, resY,
         gx, gy,
         filename,
         draw_nodes=True,
@@ -56,12 +61,12 @@ def draw_graph(
 
     dwg = svgwrite.Drawing(
         filename='{}.svg'.format(filename),
-        size=('{}'.format(mx), '{}'.format(my)),
-        viewBox=('0 0 {} {}'.format(mx, my)))
+        size=('{}'.format(resX), '{}'.format(resY)),
+        viewBox=('0 0 {} {}'.format(resX, resY)))
 
-    _sp = Scaler(mx, my, gx, gy)
+    _sp = Scaler(resX, resY, gx, gy)
 
-    _draw_edges(dwg, g.edges_iter(), _sp)
+    _draw_edges(dwg, g, g.edges(), _sp)
     _draw_nodes(dwg, g, _sp)
 
     return dwg
